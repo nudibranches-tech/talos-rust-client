@@ -105,7 +105,11 @@ cargo run --example version
 cargo run --example talosconfig_connect --features talosconfig
 ```
 
-## Version Pinning
+## Versioning
+
+This library's versions are aligned with the Talos version in the submodule. We follow the pattern:
+- Talos version `v1.10.6` → Library versions `1.10.6.1`, `1.10.6.2`, `1.10.6.3`, etc.
+- The suffix (`.1`, `.2`, `.3`) indicates updates to the Rust client while maintaining compatibility with the same Talos API version
 
 This crate includes Talos API definitions as a git submodule pinned to a specific release tag.
 The current version is pinned to **v1.10.6**.
