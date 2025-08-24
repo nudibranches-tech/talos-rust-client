@@ -2,133 +2,224 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC to catch any bitrot
+    - cron: '0 2 * * *'
 
 env:
-  CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+
+# Cancel previous runs for PRs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    name: Test
+    name: Test Suite
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
+      fail-fast: false
       matrix:
-        rust:
-          - stable
-          - 1.75.0  # MSRV
+        rust: [stable, beta, "1.75"]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
       
-      - name: Install Rust
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
-      
-      - name: Cache cargo registry
-        uses: actions/cache@v4
+          components: rustfmt, clippy
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      
-      - name: Cache cargo build
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-      
-      - name: Build
+          prefix-key: v0-rust-${{ matrix.rust }}
+
+      - name: Check formatting
+        if: matrix.rust == 'stable'
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        if: matrix.rust == 'stable'
+        run: cargo clippy --all-features --all-targets -- -D warnings
+
+      - name: Build without features
+        run: cargo build --verbose
+
+      - name: Build with all features
         run: cargo build --all-features --verbose
-      
+
       - name: Run tests
         run: cargo test --all-features --verbose
-      
-      - name: Build examples
+
+      - name: Check examples
         run: |
-          cargo build --example version
-          cargo build --example health
-          cargo build --example events
-          cargo build --example talosconfig_connect --features talosconfig
+          cargo check --example version
+          cargo check --example health
+          cargo check --example events
+          cargo check --example talosconfig_connect --features talosconfig
 
-  fmt:
-    name: Format
+  coverage:
+    name: Code Coverage
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Only run on main branch pushes to avoid duplicate coverage reports
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      
-      - name: Install Rust
+
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
-      
-      - name: Check formatting
-        run: cargo fmt -- --check
+          components: llvm-tools-preview
 
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
-      
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      
-      - name: Run clippy
-        run: cargo clippy --all-features -- -D warnings
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
 
-  doc:
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Generate coverage
+        run: cargo llvm-cov --all-features --lcov --output-path lcov.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  docs:
     name: Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      
-      - name: Install Rust
+
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-      
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-      
-      - name: Build documentation
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check documentation
+        env:
+          RUSTDOCFLAGS: -D warnings
         run: cargo doc --all-features --no-deps
-      
-      - name: Test documentation
-        run: cargo test --doc --all-features
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  msrv:
+    name: Minimum Supported Rust Version
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install MSRV toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.75"
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check MSRV
+        run: |
+          cargo check --all-features
+          cargo test --all-features
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Run on PRs with 'integration' label or on main branch
+    if: |
+      github.event_name == 'push' || 
+      github.event_name == 'schedule' ||
+      contains(github.event.pull_request.labels.*.name, 'integration')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Set up Talos test environment
+        run: |
+          echo "Setting up mock Talos certificates for testing"
+          mkdir -p test-certs
+          # Generate test CA
+          openssl req -x509 -newkey rsa:4096 -keyout test-certs/ca-key.pem -out test-certs/ca.crt -days 365 -nodes -subj "/CN=Test CA"
+          # Generate client cert
+          openssl req -newkey rsa:4096 -keyout test-certs/client-key.pem -out test-certs/client.csr -nodes -subj "/CN=Test Client"
+          openssl x509 -req -in test-certs/client.csr -CA test-certs/ca.crt -CAkey test-certs/ca-key.pem -CAcreateserial -out test-certs/client.crt -days 365
+
+      - name: Run integration tests
+        env:
+          TALOS_CA: test-certs/ca.crt
+          TALOS_CERT: test-certs/client.crt
+          TALOS_KEY: test-certs/client-key.pem
+        run: |
+          # Run connection tests with mock certificates
+          cargo test --all-features --test '*' -- --nocapture
+
+  publish-dry-run:
+    name: Publish Dry Run
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Verify package
+        run: |
+          cargo package --all-features --verbose
+          cargo publish --dry-run --all-features
+
+  status:
+    name: CI Status
+    runs-on: ubuntu-latest
+    needs: [test, coverage, docs, security-audit, msrv]
+    if: always()
+    steps:
+      - name: Successful CI
+        if: ${{ \!(contains(needs.*.result, 'failure')) }}
+        run: exit 0
+      - name: Failed CI
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: exit 1
+EOF < /dev/null
