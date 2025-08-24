@@ -48,7 +48,7 @@ jobs:
       - name: Publish to crates.io
         run: |
           # The version has been updated in Cargo.toml by cargo-edit
-          cargo publish --all-features --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          cargo publish --all-features --allow-dirty --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
