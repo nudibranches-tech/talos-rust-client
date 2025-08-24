@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Get version
     let request = tonic::Request::new(talos_rust_client::common::EmptyRequest {});
     let response = client.version(request).await?;
-    
+
     Ok(())
 }
 ```
@@ -72,12 +72,12 @@ use talos_rust_client::talosconfig::TalosConfig;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load from default location (~/.talos/config)
     let config = TalosConfig::from_file("~/.talos/config")?;
-    
+
     // Connect using current context
     let channel = config.connector()?.connect().await?;
-    
+
     // Use the channel with any service client...
-    
+
     Ok(())
 }
 ```

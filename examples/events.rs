@@ -2,7 +2,7 @@
 
 use futures_util::StreamExt;
 use talos_rust_client::{MachineServiceClient, TalosConnector};
-use tracing::{info, error};
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -49,12 +49,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if let Some(metadata) = &event_msg.metadata {
                     info!("[{}] Node: {}", count, metadata.hostname);
                 }
-                
+
                 info!("Event ID: {}", event_msg.id);
                 if !event_msg.actor_id.is_empty() {
                     info!("Actor ID: {}", event_msg.actor_id);
                 }
-                
+
                 if let Some(data) = &event_msg.data {
                     if let Ok(data_str) = String::from_utf8(data.value.clone()) {
                         info!("Data: {}", data_str);

@@ -5,7 +5,7 @@ Initial release of `talos-rust-client` - a Rust gRPC client for SideroLabs Talos
 ## Features
 
 - **mTLS Support**: Secure communication with Talos nodes using mutual TLS authentication
-- **Type-safe API**: Generated from official Talos v1.10.6 proto files  
+- **Type-safe API**: Generated from official Talos v1.10.6 proto files
 - **Async/await**: Built on tokio and tonic for modern async Rust
 - **Talosconfig Support**: Optional feature to load credentials from Talos config files
 - **Pure Rust TLS**: Uses rustls for TLS implementation

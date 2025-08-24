@@ -44,15 +44,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut stream = response.into_inner();
 
     info!("Cluster Health Progress:");
-    while let Some(progress) = stream
-        .message()
-        .await?
-    {
+    while let Some(progress) = stream.message().await? {
         if let Some(metadata) = &progress.metadata {
             info!("Node: {}", metadata.hostname);
         }
         info!("Progress: {}", progress.message);
-        
+
         // Check if the message indicates cluster is ready
         if progress.message.contains("ready") || progress.message.contains("healthy") {
             info!("Cluster is ready!");
