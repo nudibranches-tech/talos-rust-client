@@ -79,9 +79,10 @@ Releases are triggered by git tags:
 2. GitHub Actions will:
    - Update Cargo.toml version using cargo-edit
    - Run tests
-   - Create GitHub release
    - Publish to crates.io
    - Build Linux binaries (amd64, musl, arm64)
+   - Upload artifacts to the draft release created by release-drafter
+3. After the workflow completes, go to GitHub releases to review and publish the draft release
 
 ## Known Issues
 
