@@ -1,0 +1,3 @@
+[submodule "vendor/talos"]
+	path = vendor/talos
+	url = https://github.com/siderolabs/talos
