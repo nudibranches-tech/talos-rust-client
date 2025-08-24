@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@master
         with:
@@ -157,7 +157,7 @@ jobs:
     timeout-minutes: 45
     # Run on PRs with 'integration' label or on main branch
     if: |
-      github.event_name == 'push' || 
+      github.event_name == 'push' ||
       github.event_name == 'schedule' ||
       contains(github.event.pull_request.labels.*.name, 'integration')
     steps:
@@ -222,4 +222,3 @@ jobs:
       - name: Failed CI
         if: ${{ contains(needs.*.result, 'failure') }}
         run: exit 1
-EOF < /dev/null

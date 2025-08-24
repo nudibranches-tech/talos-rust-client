@@ -1,6 +1,6 @@
 //! Example: Connect using a Talos config file
 
-use talos_rust_client::{MachineServiceClient, talosconfig::TalosConfig};
+use talos_rust_client::{talosconfig::TalosConfig, MachineServiceClient};
 use tracing::info;
 
 #[tokio::main]
@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load talosconfig from file
     let config_path = std::env::var("TALOSCONFIG").unwrap_or_else(|_| {
         let home = std::env::var("HOME").expect("HOME not set");
-        format!("{}/.talos/config", home)
+        format!("{home}/.talos/config")
     });
 
     info!("Loading talosconfig from: {}", config_path);

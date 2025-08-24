@@ -37,7 +37,7 @@ jobs:
         run: |
           # Update the version in Cargo.toml
           cargo set-version ${{ steps.extract_version.outputs.version }}
-          
+
           # Show the change
           git diff
 
@@ -50,7 +50,7 @@ jobs:
           name: Release ${{ steps.extract_version.outputs.tag }}
           body: |
             Release ${{ steps.extract_version.outputs.tag }}
-            
+
             See [CHANGELOG.md](https://github.com/nuditech/talos-rust-client/blob/main/CHANGELOG.md) for details.
           draft: false
           prerelease: ${{ contains(steps.extract_version.outputs.version, '-') }}
@@ -115,17 +115,17 @@ jobs:
       - name: Package artifacts
         run: |
           mkdir -p artifacts
-          
+
           # Copy examples
           cp target/${{ matrix.target }}/release/examples/version artifacts/ || true
           cp target/${{ matrix.target }}/release/examples/health artifacts/ || true
           cp target/${{ matrix.target }}/release/examples/events artifacts/ || true
           cp target/${{ matrix.target }}/release/examples/talosconfig_connect artifacts/ || true
-          
+
           # Add README and LICENSE files
           cp README.md artifacts/
           cp LICENSE-* artifacts/
-          
+
           # Create archive
           cd artifacts
           tar czf ../${{ matrix.artifact_name }}.tar.gz *
