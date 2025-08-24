@@ -12,6 +12,7 @@ readme = "README.md"
 categories = ["api-bindings", "network-programming"]
 keywords = ["talos", "siderolabs", "grpc", "mtls", "kubernetes"]
 authors = ["Nuditech Team"]
+exclude = ["vendor/"]
 
 [features]
 default = ["tls-rustls"]
