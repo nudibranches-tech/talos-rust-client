@@ -1,6 +1,6 @@
 [package]
 name = "talos-rust-client"
-version = "main-snapshot"
+version = "0.0.0-dev"
 edition = "2021"
 rust-version = "1.75"
 license = "MIT OR Apache-2.0"
