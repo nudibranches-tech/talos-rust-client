@@ -42,7 +42,7 @@ base64 = { version = "0.22", optional = true }
 
 [build-dependencies]
 tonic-build = { version = "0.12", features = ["prost"] }
-prost-build = "0.13"
+prost-build = "0.14"
 
 [dev-dependencies]
 tokio-test = "0.4"
