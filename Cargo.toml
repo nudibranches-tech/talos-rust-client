@@ -21,7 +21,7 @@ talosconfig = ["serde_yaml", "base64"]
 
 [dependencies]
 tokio = { version = "1.42", features = ["macros", "rt-multi-thread"] }
-tonic = { version = "0.12", features = ["tls", "tls-roots"] }
+tonic = { version = "0.14", features = ["tls", "tls-roots"] }
 tower = "0.4"
 prost = "0.13"
 prost-types = "0.13"
